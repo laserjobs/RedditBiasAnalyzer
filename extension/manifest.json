@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "Reddit Bias Analyzer",
+  "version": "3.0",
+  "description": "Real-time in-browser AI subreddit bias, Vibe Check & Global Leaderboard",
+  "permissions": ["activeTab", "scripting", "storage", "offscreen"],
+  "host_permissions": ["*://*.reddit.com/*"],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://*.reddit.com/r/*"],
+      "js": ["content.js"]
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "matches": ["*://*.reddit.com/*"],
+      "resources": ["transformers/*"]
+    }
+  ],
+  "action": {
+    "default_title": "Analyze Subreddit (AI)"
+  }
+}
