@@ -16,7 +16,7 @@ A fully decentralized, privacy-first ecosystem that analyzes Reddit communities 
 *   **Automated Discord Bot:** A zero-cost GitHub Action that computes and posts a daily "State of Reddit" report to your community.
 
 ## 🏗️ Technical Architecture
-This project is built on the **Holy Grail** of modern web architecture:
+This project is built on:
 1.  **Extension (The Edge):** Runs inference on the user's GPU using WebGPU and WASM.
 2.  **Supabase (The Consensus):** Acts as a neutral, anonymous aggregator for scores.
 3.  **GitHub Pages (The View):** Visualizes the global data as a Bias Heat Map.
