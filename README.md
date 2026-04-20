@@ -8,6 +8,16 @@ A fully decentralized, privacy-first ecosystem that analyzes Reddit communities 
 
 **Zero server costs. Zero data scraping. 100% Local AI.**
 
+## 🎯 The Mission: Reclaiming Media Literacy
+As social platforms become "walled gardens," the ability to objectively analyze the information we consume has diminished. Reddit's API restrictions have silenced most third-party transparency tools, leaving users inside "black box" algorithms and unmapped echo chambers.
+
+The **Reddit Bias Analyzer** is a response to this shift. Our goal is to empower users with:
+*   **Epistemic Transparency:** Understand the partisan lean and "echo-chamber" intensity of a community *before* you engage.
+*   **API-Independent Research:** By leveraging distributed, local AI, we bypass the need for centralized scrapers and costly APIs.
+*   **Zero-Knowledge Collective Intelligence:** We believe you should be able to contribute to a global map of social bias without ever sacrificing your personal browsing data.
+
+**This isn't just a tool; it's an experiment in using the user's own hardware to keep the open web transparent.**
+
 ## 🌟 Features
 *   **In-Browser WebGPU AI:** Uses HuggingFace `Transformers.js` (MobileBERT NLI) to detect political lean and domain bias using your hardware, not a remote API.
 *   **Local Vibe Checks:** Loads a quantized 1B Llama-3.2 model into your browser cache via `WebLLM` to write accurate sociological summaries of subreddit culture.
