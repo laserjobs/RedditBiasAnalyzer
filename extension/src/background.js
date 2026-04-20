@@ -1,11 +1,10 @@
 import { pipeline, env } from '@huggingface/transformers';
 import { createClient } from '@supabase/supabase-js';
+import { CONFIG } from './config.js';
 import biasMap from './utils/biasMap.json' with { type: 'json' };
 
 // --- SUPABASE SETUP ---
-const SUPABASE_URL = 'https://YOUR-PROJECT-REF.supabase.co';
-const SUPABASE_KEY = 'YOUR_ANON_KEY_HERE';
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabase = createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
 
 env.backends.onnx.wasm.wasmPaths = chrome.runtime.getURL('transformers/');
 let classifier = null;
