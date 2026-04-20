@@ -1,0 +1,18 @@
+{
+  "name": "reddit-bias-analyzer-extension",
+  "version": "3.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite build --watch"
+  },
+  "dependencies": {
+    "@huggingface/transformers": "^3.0.0",
+    "@mlc-ai/web-llm": "^0.2.46",
+    "@supabase/supabase-js": "^2.39.0"
+  },
+  "devDependencies": {
+    "fs-extra": "^11.2.0",
+    "vite": "^5.0.0"
+  }
+}
