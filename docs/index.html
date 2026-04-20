@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reddit Bias Analyzer • Global Leaderboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { background: #0f0f10; color: #d7dadc; font-family: system-ui; }
+    .card { background: #1a1a1b; border: 1px solid #343536; }
+  </style>
+</head>
+<body class="min-h-screen py-8">
+  <div class="max-w-6xl mx-auto px-6">
+    <div class="flex justify-between items-center mb-8">
+      <div>
+        <h1 class="text-4xl font-bold text-[#ff4500]">Reddit Bias Analyzer</h1>
+        <p class="text-gray-400">Live decentralized leaderboard • Privacy-first • No accounts</p>
+      </div>
+      <div class="flex gap-4">
+        <button id="toggleView" class="px-4 py-2 bg-[#343536] hover:bg-[#ff4500] text-white rounded-lg transition-all font-bold">
+          🗺️ Show Heat Map
+        </button>
+      </div>
+    </div>
+
+    <!-- Heat Map -->
+    <div id="chartContainer" class="hidden bg-[#1a1a1b] p-6 rounded-2xl border border-[#343536] mb-8">
+      <canvas id="biasChart" height="400"></canvas>
+    </div>
+
+    <!-- Cards -->
+    <div id="leaderboard" class="grid grid-cols-1 md:grid-cols-3 gap-6"></div>
+
+    <div class="mt-12 text-center text-xs text-gray-500">
+      Last updated: <span id="last-updated"></span><br>
+      Data is 100% anonymous • One score per user per subreddit per day
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://your-project-ref.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJ...'; // ← your anon key
+
+    const supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    let chartInstance = null;
+
+    async function loadLeaderboard() {
+      const { data, error } = await supabase
+        .from('subreddit_scores')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(1000);
+
+      if (error) return console.error(error);
+      if (!data.length) return;
+
+      const grouped = {};
+      data.forEach(row => {
+        if (!grouped[row.subreddit]) grouped[row.subreddit] = { scores: [], echo: [], domain: [], dates: [] };
+        grouped[row.subreddit].scores.push(row.lean_score);
+        grouped[row.subreddit].echo.push(row.echo_index);
+        grouped[row.subreddit].domain.push(row.domain_bias);
+        grouped[row.subreddit].dates.push(row.created_at);
+      });
+
+      const statsArray = Object.entries(grouped).map(([sub, stats]) => ({
+        sub,
+        latest: stats.scores[0],
+        avgLean: Math.round(stats.scores.reduce((a,b)=>a+b,0) / stats.scores.length),
+        avgEcho: Math.round(stats.echo.reduce((a,b)=>a+b,0) / stats.echo.length),
+        avgDomain: Math.round(stats.domain.reduce((a,b)=>a+b,0) / stats.domain.length),
+        samples: stats.scores.length
+      }));
+
+      // Render Cards
+      const cardsHTML = statsArray.map(stat => {
+        const leanColor = stat.latest > 30 ? 'text-red-400' : stat.latest < -30 ? 'text-blue-400' : 'text-purple-400';
+        const leanLabel = stat.latest > 30 ? 'Strong Right' : stat.latest < -30 ? 'Strong Left' : 'Mixed';
+        return `
+          <div class="card rounded-2xl p-6 hover:border-[#ff4500]/50 transition-all">
+            <div class="flex justify-between items-start">
+              <div>
+                <h3 class="text-2xl font-bold">r/${stat.sub}</h3>
+                <span class="${leanColor} font-semibold">${leanLabel} (${stat.latest})</span>
+              </div>
+              <div class="text-right text-sm">
+                <div class="text-gray-400">Echo Chamber</div>
+                <div class="text-xl font-mono">${stat.avgEcho}/100</div>
+              </div>
+            </div>
+            <div class="mt-6 grid grid-cols-3 gap-4 text-center text-xs">
+              <div><div class="text-gray-400">Avg Lean</div><div class="font-mono text-lg">${stat.avgLean}</div></div>
+              <div><div class="text-gray-400">Domain Bias</div><div class="font-mono text-lg">${stat.avgDomain}</div></div>
+              <div><div class="text-gray-400">Samples</div><div class="font-mono text-lg">${stat.samples}</div></div>
+            </div>
+          </div>
+        `;
+      });
+
+      document.getElementById('leaderboard').innerHTML = cardsHTML.join('');
+      document.getElementById('last-updated').textContent = new Date().toLocaleString();
+
+      // Render Heat Map
+      renderChart(statsArray);
+    }
+
+    function renderChart(statsArray) {
+      const ctx = document.getElementById('biasChart').getContext('2d');
+      if (chartInstance) chartInstance.destroy();
+
+      const chartData = statsArray.map(stat => ({
+        x: stat.avgLean,
+        y: stat.avgEcho,
+        r: Math.min(Math.max(stat.samples * 3, 5), 25),
+        sub: 'r/' + stat.sub
+      }));
+
+      chartInstance = new Chart(ctx, {
+        type: 'bubble',
+        data: {
+          datasets: [{
+            label: 'Subreddits',
+            data: chartData,
+            backgroundColor: (ctx) => {
+              const x = ctx.raw?.x || 0;
+              return x < -20 ? 'rgba(96, 165, 250, 0.8)' : x > 20 ? 'rgba(248, 113, 113, 0.8)' : 'rgba(192, 132, 252, 0.8)';
+            },
+            borderColor: '#fff',
+            borderWidth: 1.5
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => `${ctx.raw.sub} → Lean ${ctx.raw.x} | Echo ${ctx.raw.y}`
+              }
+            }
+          },
+          scales: {
+            x: { title: { display: true, text: '← Left Lean                          Right Lean →', color: '#888' }, min: -100, max: 100, grid: { color: '#333' } },
+            y: { title: { display: true, text: 'Echo Chamber Index (Higher = Stronger Bubble)', color: '#888' }, min: 0, max: 100, grid: { color: '#333' } }
+          }
+        }
+      });
+    }
+
+    // Toggle between cards & heat map
+    document.getElementById('toggleView').addEventListener('click', (e) => {
+      const chart = document.getElementById('chartContainer');
+      const list = document.getElementById('leaderboard');
+      if (chart.classList.contains('hidden')) {
+        chart.classList.remove('hidden');
+        list.classList.add('hidden');
+        e.target.innerText = "📋 Show Cards";
+      } else {
+        chart.classList.add('hidden');
+        list.classList.remove('hidden');
+        e.target.innerText = "🗺️ Show Heat Map";
+      }
+    });
+
+    // Load everything
+    loadLeaderboard();
+    setInterval(loadLeaderboard, 30000); // auto-refresh every 30s
+  </script>
+</body>
+</html>
